@@ -1,0 +1,131 @@
+#define BLYNK_PRINT Serial
+
+#define BLYNK_TEMPLATE_ID "TMPL61LHt7ueW"
+#define BLYNK_TEMPLATE_NAME "projek666"
+#define BLYNK_AUTH_TOKEN "BkZwYQeZOZLKAIGYfIKO36WQCJMTCOok"
+
+#include <ESP8266WiFi.h>
+#include <BlynkSimpleEsp8266.h>
+
+char ssid[] = "lab electronic";
+char pass[] = "Labelec24!"; 
+
+/// Pin Definitions
+#define RELAY_PIN D0
+#define SW_RELAY_PIN 1
+#define SW_MODE_PIN D8
+#define LED_GREEN_PIN D3
+#define LED_YELLOW_PIN D4
+#define LED_RED_PIN D7
+#define ECHO_PIN D5
+#define TRIGGER_PIN D6
+
+// Blynk virtual pins
+#define GAUGE V0
+#define SETPOINT V1
+#define LED V2
+#define PUMP_STATUS V3
+#define MODE_BUTTON V4
+
+// Global variables
+int tankHeight = 40;   // cm
+int sensorOffset = 5;  // cm
+int setPoint = 30;     // %
+bool autoMode = true;
+int waterLevel = 0;
+int tankCapacity = 0;
+
+BlynkTimer timer;
+
+void setup() {
+  Serial.begin(115200);
+
+  pinMode(RELAY_PIN, OUTPUT);
+  pinMode(SW_RELAY_PIN, INPUT_PULLUP);
+  pinMode(SW_MODE_PIN, INPUT);
+  pinMode(LED_GREEN_PIN, OUTPUT);
+  pinMode(LED_YELLOW_PIN, OUTPUT);
+  pinMode(LED_RED_PIN, OUTPUT);
+  pinMode(TRIGGER_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
+
+  Blynk.begin(BLYNK_AUTH_TOKEN, ssid, pass);
+
+  timer.setInterval(1000L, sendSensorData);
+}
+
+void loop() {
+  Blynk.run();
+  timer.run();
+
+  waterLevel = measureWaterLevel();
+  tankCapacity = calculateTankCapacity(waterLevel);
+
+  updateLEDs(waterLevel);
+  controlPump();
+}
+
+int measureWaterLevel() {
+  digitalWrite(TRIGGER_PIN, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIGGER_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIGGER_PIN, LOW);
+
+  long duration = pulseIn(ECHO_PIN, HIGH);
+  int distance = duration * 0.034 / 2;
+  Serial.print("Jarak: ");
+  Serial.print(distance);
+  Serial.println(" cm");
+  return tankHeight - (distance - sensorOffset);
+}
+
+int calculateTankCapacity(int level) {
+  return map(level, 0, tankHeight, 0, 100);
+}
+
+void updateLEDs(int level) {
+  digitalWrite(LED_GREEN_PIN, level > 25);
+  digitalWrite(LED_YELLOW_PIN, level >= 10 && level <= 25);
+  digitalWrite(LED_RED_PIN, level < 10);
+}
+
+void controlPump() {
+  if (autoMode) {
+    if (tankCapacity < setPoint) {
+      digitalWrite(RELAY_PIN, LOW);
+    } else if (tankCapacity > setPoint) {
+      digitalWrite(RELAY_PIN, HIGH);
+    }
+  } else {
+    digitalWrite(RELAY_PIN, !digitalRead(SW_RELAY_PIN));
+  }
+}
+
+void sendSensorData() {
+  Blynk.virtualWrite(VP_GAUGE, tankCapacity);
+
+  if (waterLevel > 25) {
+    Blynk.setProperty(VP_LED, "color", "#23C48E");
+  } else if (waterLevel >= 10 && waterLevel <= 25) {
+    Blynk.setProperty(VP_LED, "color", "#ED9D00");
+  } else {
+    Blynk.setProperty(VP_LED, "color", "#D3435C");
+  }
+
+  Blynk.virtualWrite(VP_LED, 255);
+
+  Blynk.virtualWrite(VP_PUMP_STATUS, digitalRead(RELAY_PIN) ? "Pompa Hidup" : "Pompa Mati");
+}
+
+BLYNK_WRITE(VP_SLIDER) {
+  setPoint = param.asInt();
+}
+
+BLYNK_WRITE(VP_MODE_BUTTON) {
+  autoMode = param.asInt();
+}
+
+BLYNK_CONNECTED() {
+  Blynk.syncVirtual(VP_SLIDER, VP_MODE_BUTTON);
+}
