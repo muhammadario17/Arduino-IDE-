@@ -104,7 +104,7 @@ void notif() {       //NOTIF LED
     digitalWrite(red, 0);
     digitalWrite(yellow, 0);
     digitalWrite(green, 1);
-    Blynk.setProperty(V2, "color", "#D3435C");
+    Blynk.setProperty(V2, "color", "#23C48E");
   } else if (water > 10 && water <  25) {  //MIDDLE WATER LVL
     digitalWrite(red, 0);
     digitalWrite(yellow, 1);
@@ -114,7 +114,7 @@ void notif() {       //NOTIF LED
     digitalWrite(red, 1);
     digitalWrite(yellow, 0);
     digitalWrite(green, 0);
-    Blynk.setProperty(V2, "color", "#23C48E");
+    Blynk.setProperty(V2, "color", "#D3435C");
   }
 
   if (mode == 1) {     
