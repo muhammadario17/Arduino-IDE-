@@ -23,8 +23,6 @@ char pass[] = "Labelec24!";
 #define pintu2_Pin D6
 #define pintu3_Pin D7
 
-#define BLYNK_GREEN     "#23C48E"
-
 BlynkTimer timer;
 
 
