@@ -52,10 +52,10 @@ WidgetLED led(V2);
 BlynkTimer timer;
 
 
-BLYNK_WRITE(V1) {
+BLYNK_WRITE(V1) { // BLYNK SWITCH MODE
   mode = param.asInt();
 }
-BLYNK_WRITE(V3) {
+BLYNK_WRITE(V3) { // BLYNK SETPOINT
   setPoint = param.asInt();
 }
 
@@ -95,8 +95,8 @@ void sensor() {
 
   duration = pulseIn(echo, HIGH);
   distance = duration * 0, 034 / 2;
-  water = map(distance, 0, 204, 0, 100);
-  Blynk.virtualWrite(V0, water);  //BLYNK WIDGET VIEW FOR ULRASONIC
+  water = map(distance, 0, 204, 0, 100); //READ WATER LVL
+  Blynk.virtualWrite(V0, water);       //BLYNK WIDGET VIEW FOR ULRASONIC
 }
 
 void notif() {       //NOTIF LED
